@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: authmocker-postgres
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-authmocker}
+      POSTGRES_USER: ${DB_USERNAME:-authmocker}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - authmocker
+
+  redis:
+    image: redis:alpine
+    container_name: authmocker-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - authmocker
+
+  api:
+    build:
+      context: ./authmocker-api
+      dockerfile: Dockerfile
+    container_name: authmocker-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8080}:8000"
+    volumes:
+      - ./authmocker-api:/var/www/html
+      - vendor_data:/var/www/html/vendor
+    env_file:
+      - ./authmocker-api/.env
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - authmocker
+
+  app:
+    build:
+      context: ./authmocker-app
+      dockerfile: Dockerfile
+    container_name: authmocker-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      - ./authmocker-app:/app
+      - /app/node_modules
+    env_file:
+      - ./authmocker-app/.env
+    networks:
+      - authmocker
+
+volumes:
+  postgres_data:
+  vendor_data:
+
+networks:
+  authmocker:
+    driver: bridge
