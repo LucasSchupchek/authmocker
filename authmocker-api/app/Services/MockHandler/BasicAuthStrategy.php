@@ -2,40 +2,49 @@
 
 namespace App\Services\MockHandler;
 
+use App\Models\MockCredential;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
 class BasicAuthStrategy implements AuthStrategyInterface
 {
-    public function validate(Request $request, array $config): bool
+    public function validate(Request $request, array $config, Collection $credentials): ?MockCredential
     {
         $authHeader = $request->header('Authorization', '');
 
         if (!str_starts_with($authHeader, 'Basic ')) {
-            return false;
+            return null;
         }
 
         $decoded = base64_decode(substr($authHeader, 6));
         if ($decoded === false) {
-            return false;
+            return null;
         }
 
         $parts = explode(':', $decoded, 2);
         if (count($parts) !== 2) {
-            return false;
+            return null;
         }
 
         [$username, $password] = $parts;
 
-        return $username === ($config['username'] ?? '') && $password === ($config['password'] ?? '');
+        foreach ($credentials as $credential) {
+            $creds = $credential->credentials ?? [];
+            if (($creds['username'] ?? '') === $username && ($creds['password'] ?? '') === $password) {
+                return $credential;
+            }
+        }
+
+        return null;
     }
 
-    public function getTokenEndpointResponse(Request $request, array $config): array
+    public function getTokenEndpointResponse(Request $request, array $config, Collection $credentials): array
     {
         return [
             'status' => 200,
             'body' => [
                 'message' => 'Basic Auth does not use token endpoints. Send credentials via Authorization header.',
-                'example' => 'Authorization: Basic ' . base64_encode(($config['username'] ?? 'user') . ':' . ($config['password'] ?? 'pass')),
+                'example' => 'Authorization: Basic base64(username:password)',
             ],
         ];
     }

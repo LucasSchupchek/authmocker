@@ -2,6 +2,8 @@
 
 namespace App\Services\MockHandler;
 
+use App\Models\MockCredential;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -9,19 +11,19 @@ class SessionStrategy implements AuthStrategyInterface
 {
     private static array $activeSessions = [];
 
-    public function validate(Request $request, array $config): bool
+    public function validate(Request $request, array $config, Collection $credentials): ?MockCredential
     {
         $cookieName = $config['cookie_name'] ?? 'mock_session';
         $sessionToken = $request->cookie($cookieName) ?? $request->header('X-Session-Token', '');
 
         if (empty($sessionToken)) {
-            return false;
+            return null;
         }
 
         $sessionKey = $this->getSessionKey($config);
 
         if (!isset(self::$activeSessions[$sessionKey][$sessionToken])) {
-            return false;
+            return null;
         }
 
         $session = self::$activeSessions[$sessionKey][$sessionToken];
@@ -29,18 +31,38 @@ class SessionStrategy implements AuthStrategyInterface
 
         if (time() > ($session['created_at'] + ($ttlMinutes * 60))) {
             unset(self::$activeSessions[$sessionKey][$sessionToken]);
-            return false;
+            return null;
         }
 
-        return true;
+        // Find the credential that was stored in the session
+        $credentialId = $session['credential_id'] ?? null;
+
+        if ($credentialId && $credentials->isNotEmpty()) {
+            $matched = $credentials->firstWhere('id', $credentialId);
+            if ($matched) {
+                return $matched;
+            }
+        }
+
+        return $credentials->first();
     }
 
-    public function getTokenEndpointResponse(Request $request, array $config): array
+    public function getTokenEndpointResponse(Request $request, array $config, Collection $credentials): array
     {
         $username = $request->input('username', '');
         $password = $request->input('password', '');
 
-        if ($username !== ($config['username'] ?? '') || $password !== ($config['password'] ?? '')) {
+        // Iterate credentials to match username/password
+        $matchedCredential = null;
+        foreach ($credentials as $credential) {
+            $creds = $credential->credentials ?? [];
+            if (($creds['username'] ?? '') === $username && ($creds['password'] ?? '') === $password) {
+                $matchedCredential = $credential;
+                break;
+            }
+        }
+
+        if (!$matchedCredential) {
             return [
                 'status' => 401,
                 'body' => [
@@ -57,6 +79,7 @@ class SessionStrategy implements AuthStrategyInterface
 
         self::$activeSessions[$sessionKey][$sessionToken] = [
             'username' => $username,
+            'credential_id' => $matchedCredential->id,
             'created_at' => time(),
         ];
 
@@ -66,6 +89,7 @@ class SessionStrategy implements AuthStrategyInterface
                 'message' => 'Login successful.',
                 'session_token' => $sessionToken,
                 'expires_in' => $ttlMinutes * 60,
+                'matched_credential_id' => $matchedCredential->id,
             ],
             'cookies' => [
                 $cookieName => [
@@ -75,6 +99,7 @@ class SessionStrategy implements AuthStrategyInterface
                     'httpOnly' => true,
                 ],
             ],
+            'matched_credential_id' => $matchedCredential->id,
         ];
     }
 

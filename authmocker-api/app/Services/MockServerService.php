@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AuthType;
+use App\Models\MockCredential;
 use App\Models\MockServer;
 use App\Traits\HasCache;
 use Illuminate\Database\Eloquent\Collection;
@@ -32,7 +33,7 @@ class MockServerService
             self::CACHE_TTL,
             fn () => MockServer::where('id', $id)
                 ->where('user_id', $userId)
-                ->with('endpoints')
+                ->with(['endpoints', 'credentials'])
                 ->firstOrFail()
         );
     }
@@ -46,9 +47,19 @@ class MockServerService
             'name' => $data['name'],
             'slug' => $data['slug'],
             'auth_type' => $authType,
-            'config' => $data['config'] ?? $authType->defaultConfig(),
+            'config' => $data['config'] ?? $authType->defaultServerConfig(),
             'is_active' => $data['is_active'] ?? true,
             'description' => $data['description'] ?? null,
+        ]);
+
+        // Create default credential for the server
+        $defaultCredential = $authType->defaultCredential();
+        MockCredential::create([
+            'mock_server_id' => $server->id,
+            'label' => 'Default',
+            'is_active' => true,
+            'credentials' => $defaultCredential['credentials'],
+            'profile' => $defaultCredential['profile'],
         ]);
 
         $this->invalidateUserCache($userId);
@@ -82,6 +93,7 @@ class MockServerService
 
         $this->invalidateServerCache($server, $slug);
         $this->cacheForget("endpoints:server:{$serverId}");
+        $this->cacheForget("credentials:server:{$serverId}");
     }
 
     private function invalidateUserCache(string $userId): void

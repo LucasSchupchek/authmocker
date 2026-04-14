@@ -10,6 +10,8 @@ export interface MockServer {
   mock_url: string
   endpoints_count?: number
   endpoints?: MockEndpoint[]
+  credentials_count?: number
+  credentials?: MockCredential[]
   created_at: string
   updated_at: string
 }
@@ -34,6 +36,8 @@ export interface RequestLog {
   id: string
   mock_server_id: string
   mock_endpoint_id: string | null
+  mock_credential_id: string | null
+  credential_label: string | null
   method: string
   path: string
   headers: Record<string, string> | null
@@ -48,7 +52,26 @@ export interface RequestLog {
 export interface AuthType {
   value: string
   label: string
-  default_config: Record<string, any>
+  default_server_config: Record<string, any>
+  default_credential: Record<string, any>
+}
+
+export interface CredentialProfile {
+  name?: string
+  email?: string
+  role?: string
+  custom?: Record<string, any>
+}
+
+export interface MockCredential {
+  id: string
+  mock_server_id: string
+  label: string
+  is_active: boolean
+  credentials: Record<string, any>
+  profile: CredentialProfile
+  created_at: string
+  updated_at: string
 }
 
 export interface PaginatedResponse<T> {

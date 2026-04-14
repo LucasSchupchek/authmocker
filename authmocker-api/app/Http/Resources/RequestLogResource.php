@@ -21,6 +21,8 @@ class RequestLogResource extends JsonResource
             'ip' => $this->ip,
             'auth_status' => $this->auth_status->value,
             'response_status' => $this->response_status,
+            'mock_credential_id' => $this->mock_credential_id,
+            'credential_label' => $this->whenLoaded('mockCredential', fn () => $this->mockCredential?->label),
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

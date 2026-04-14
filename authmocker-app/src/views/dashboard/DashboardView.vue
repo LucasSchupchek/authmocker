@@ -12,46 +12,37 @@ onMounted(() => {
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-8">
+    <div class="d-flex align-center justify-space-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-white">Mock Servers</h1>
-        <p class="text-gray-400 mt-1">Manage your authentication mock servers</p>
+        <h1 class="text-h4 font-weight-bold">Mock Servers</h1>
+        <p class="text-subtitle-2 text-medium-emphasis mt-1">Manage your authentication mock servers</p>
       </div>
-      <RouterLink
-        to="/servers/create"
-        class="px-4 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
+      <v-btn color="primary" to="/servers/create" prepend-icon="mdi-plus">
         New Server
-      </RouterLink>
+      </v-btn>
     </div>
 
-    <div v-if="store.loading" class="text-gray-400">Loading servers...</div>
+    <v-progress-linear v-if="store.loading" indeterminate color="primary" class="mb-4" />
 
     <div v-else-if="store.servers.length === 0" class="text-center py-16">
-      <div class="w-16 h-16 bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
-        <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
-        </svg>
-      </div>
-      <h3 class="text-lg font-medium text-gray-300">No mock servers yet</h3>
-      <p class="text-gray-500 mt-1">Create your first mock authentication server to get started.</p>
-      <RouterLink
-        to="/servers/create"
-        class="inline-block mt-4 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-lg transition-colors"
-      >
+      <v-icon size="64" color="grey" class="mb-4">mdi-server-off</v-icon>
+      <h3 class="text-h6">No mock servers yet</h3>
+      <p class="text-medium-emphasis mt-1">Create your first mock authentication server to get started.</p>
+      <v-btn color="primary" to="/servers/create" class="mt-4">
         Create Server
-      </RouterLink>
+      </v-btn>
     </div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <ServerCard
+    <v-row v-else>
+      <v-col
         v-for="server in store.servers"
         :key="server.id"
-        :server="server"
-      />
-    </div>
+        cols="12"
+        md="6"
+        lg="4"
+      >
+        <ServerCard :server="server" />
+      </v-col>
+    </v-row>
   </div>
 </template>

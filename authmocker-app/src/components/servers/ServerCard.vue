@@ -4,43 +4,45 @@ import type { MockServer } from '../../types'
 defineProps<{ server: MockServer }>()
 
 const authTypeColors: Record<string, string> = {
-  basic_auth: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  api_key: 'bg-green-500/10 text-green-400 border-green-500/20',
-  jwt: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  oauth2: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-  session: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+  basic_auth: 'blue',
+  api_key: 'green',
+  jwt: 'purple',
+  oauth2: 'orange',
+  session: 'cyan',
 }
 </script>
 
 <template>
-  <RouterLink
-    :to="`/servers/${server.id}`"
-    class="block bg-gray-800 border border-gray-700 rounded-xl p-5 hover:border-gray-600 transition-colors group"
-  >
-    <div class="flex items-start justify-between mb-3">
-      <h3 class="text-white font-semibold group-hover:text-indigo-400 transition-colors">
-        {{ server.name }}
-      </h3>
-      <span
-        :class="server.is_active ? 'bg-green-500' : 'bg-gray-500'"
-        class="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5"
-      />
-    </div>
+  <v-card hover :to="'/servers/' + server.id">
+    <v-card-title class="d-flex align-center justify-space-between">
+      <span class="text-truncate">{{ server.name }}</span>
+      <v-chip
+        size="x-small"
+        :color="server.is_active ? 'success' : 'grey'"
+        variant="flat"
+      >
+        {{ server.is_active ? 'Active' : 'Inactive' }}
+      </v-chip>
+    </v-card-title>
 
-    <span
-      :class="authTypeColors[server.auth_type] || 'bg-gray-500/10 text-gray-400'"
-      class="inline-block px-2.5 py-1 text-xs font-medium rounded-full border mb-3"
-    >
-      {{ server.auth_type_label }}
-    </span>
+    <v-card-text>
+      <v-chip
+        size="small"
+        :color="authTypeColors[server.auth_type] || 'grey'"
+        variant="tonal"
+        class="mb-3"
+      >
+        {{ server.auth_type_label }}
+      </v-chip>
 
-    <p v-if="server.description" class="text-gray-400 text-sm mb-3 line-clamp-2">
-      {{ server.description }}
-    </p>
+      <p v-if="server.description" class="text-body-2 text-medium-emphasis mb-0" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+        {{ server.description }}
+      </p>
+    </v-card-text>
 
-    <div class="flex items-center justify-between text-xs text-gray-500">
-      <span class="font-mono">/mock/{{ server.slug }}</span>
-      <span>{{ server.endpoints_count ?? 0 }} endpoints</span>
-    </div>
-  </RouterLink>
+    <v-card-actions class="d-flex justify-space-between px-4 pb-3">
+      <code class="text-caption">/mock/{{ server.slug }}</code>
+      <span class="text-caption text-medium-emphasis">{{ server.endpoints_count ?? 0 }} endpoints</span>
+    </v-card-actions>
+  </v-card>
 </template>

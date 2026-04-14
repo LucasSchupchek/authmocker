@@ -21,15 +21,14 @@ enum AuthType: string
         };
     }
 
-    public function defaultConfig(): array
+    /**
+     * Server-level configuration (shared across all credentials).
+     */
+    public function defaultServerConfig(): array
     {
         return match ($this) {
-            self::BASIC_AUTH => [
-                'username' => 'admin',
-                'password' => 'password',
-            ],
+            self::BASIC_AUTH => [],
             self::API_KEY => [
-                'key' => bin2hex(random_bytes(16)),
                 'location' => 'header',
                 'header_name' => 'X-API-Key',
             ],
@@ -37,23 +36,86 @@ enum AuthType: string
                 'secret' => bin2hex(random_bytes(32)),
                 'algorithm' => 'HS256',
                 'expiration_minutes' => 60,
-                'claims' => ['role' => 'user'],
             ],
             self::OAUTH2 => [
-                'client_id' => bin2hex(random_bytes(8)),
-                'client_secret' => bin2hex(random_bytes(16)),
-                'redirect_uri' => 'http://localhost:3000/callback',
                 'grant_types' => ['authorization_code', 'client_credentials'],
-                'scopes' => ['read', 'write'],
                 'access_token_ttl' => 3600,
                 'refresh_token_ttl' => 86400,
             ],
             self::SESSION => [
-                'username' => 'admin',
-                'password' => 'password',
                 'session_ttl_minutes' => 120,
                 'cookie_name' => 'mock_session',
             ],
         };
+    }
+
+    /**
+     * Default credential data for a new mock server.
+     */
+    public function defaultCredential(): array
+    {
+        return match ($this) {
+            self::BASIC_AUTH => [
+                'credentials' => [
+                    'username' => 'admin',
+                    'password' => 'password',
+                ],
+                'profile' => [
+                    'name' => 'Admin User',
+                    'email' => 'admin@example.com',
+                    'role' => 'admin',
+                ],
+            ],
+            self::API_KEY => [
+                'credentials' => [
+                    'key' => bin2hex(random_bytes(16)),
+                ],
+                'profile' => [
+                    'name' => 'Default API Client',
+                    'role' => 'client',
+                ],
+            ],
+            self::JWT => [
+                'credentials' => [
+                    'sub' => 'mock-user',
+                ],
+                'profile' => [
+                    'name' => 'Mock User',
+                    'email' => 'user@example.com',
+                    'role' => 'user',
+                ],
+            ],
+            self::OAUTH2 => [
+                'credentials' => [
+                    'client_id' => bin2hex(random_bytes(8)),
+                    'client_secret' => bin2hex(random_bytes(16)),
+                    'redirect_uri' => 'http://localhost:3000/callback',
+                    'scopes' => ['read', 'write'],
+                ],
+                'profile' => [
+                    'name' => 'Default OAuth Client',
+                    'role' => 'client',
+                ],
+            ],
+            self::SESSION => [
+                'credentials' => [
+                    'username' => 'admin',
+                    'password' => 'password',
+                ],
+                'profile' => [
+                    'name' => 'Admin User',
+                    'email' => 'admin@example.com',
+                    'role' => 'admin',
+                ],
+            ],
+        };
+    }
+
+    /**
+     * Backward-compatible alias for defaultServerConfig().
+     */
+    public function defaultConfig(): array
+    {
+        return $this->defaultServerConfig();
     }
 }

@@ -12,21 +12,27 @@ const authTypes = [
 </script>
 
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-    <button
+  <v-row>
+    <v-col
       v-for="type in authTypes"
       :key="type.value"
-      @click="emit('select', type.value)"
-      :class="[
-        'p-4 rounded-xl border text-left transition-all',
-        selected === type.value
-          ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500'
-          : 'border-gray-700 bg-gray-800 hover:border-gray-600'
-      ]"
+      cols="12"
+      sm="6"
+      lg="4"
     >
-      <div class="text-2xl mb-2">{{ type.icon }}</div>
-      <div class="text-white font-medium text-sm">{{ type.label }}</div>
-      <div class="text-gray-400 text-xs mt-1">{{ type.description }}</div>
-    </button>
-  </div>
+      <v-card
+        @click="emit('select', type.value)"
+        :color="selected === type.value ? 'primary' : undefined"
+        :variant="selected === type.value ? 'outlined' : 'flat'"
+        :class="{ 'border-primary': selected === type.value }"
+        hover
+        class="pa-4"
+        style="cursor: pointer;"
+      >
+        <div class="text-h5 mb-2">{{ type.icon }}</div>
+        <div class="text-subtitle-2 font-weight-medium">{{ type.label }}</div>
+        <div class="text-caption text-medium-emphasis mt-1">{{ type.description }}</div>
+      </v-card>
+    </v-col>
+  </v-row>
 </template>

@@ -11,6 +11,7 @@ class RequestLogService
     public function listByServer(MockServer $server, int $perPage = 50): LengthAwarePaginator
     {
         return RequestLog::where('mock_server_id', $server->id)
+            ->with('mockCredential:id,label')
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
     }

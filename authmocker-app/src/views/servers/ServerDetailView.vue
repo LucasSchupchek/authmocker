@@ -4,14 +4,17 @@ import { useRoute, useRouter } from 'vue-router'
 import { useServersStore } from '../../stores/servers'
 import EndpointList from '../../components/endpoints/EndpointList.vue'
 import EndpointForm from '../../components/endpoints/EndpointForm.vue'
+import CredentialList from '../../components/credentials/CredentialList.vue'
+import CredentialForm from '../../components/credentials/CredentialForm.vue'
 import RequestLogTable from '../../components/logs/RequestLogTable.vue'
 import CodeSnippet from '../../components/ui/CodeSnippet.vue'
 
 const route = useRoute()
 const router = useRouter()
 const store = useServersStore()
-const activeTab = ref<'endpoints' | 'logs' | 'usage'>('endpoints')
+const activeTab = ref('endpoints')
 const showEndpointForm = ref(false)
+const showCredentialForm = ref(false)
 const deleting = ref(false)
 
 const serverId = computed(() => route.params.id as string)
@@ -19,6 +22,7 @@ const serverId = computed(() => route.params.id as string)
 onMounted(async () => {
   await store.fetchServer(serverId.value)
   await store.fetchEndpoints(serverId.value)
+  await store.fetchCredentials(serverId.value)
 })
 
 async function handleDelete() {
@@ -37,11 +41,11 @@ async function loadLogs() {
   await store.fetchLogs(serverId.value)
 }
 
-function switchTab(tab: 'endpoints' | 'logs' | 'usage') {
+function onTabChange(tab: string) {
   if (tab === 'logs') {
     loadLogs()
-  } else {
-    activeTab.value = tab
+  } else if (tab === 'credentials') {
+    store.fetchCredentials(serverId.value)
   }
 }
 </script>
@@ -49,86 +53,114 @@ function switchTab(tab: 'endpoints' | 'logs' | 'usage') {
 <template>
   <div v-if="store.currentServer">
     <!-- Header -->
-    <div class="flex items-start justify-between mb-6">
+    <div class="d-flex align-start justify-space-between mb-6">
       <div>
-        <RouterLink to="/" class="text-gray-400 hover:text-white text-sm transition-colors">
-          &larr; Back to Dashboard
-        </RouterLink>
-        <div class="flex items-center gap-3 mt-2">
-          <h1 class="text-2xl font-bold text-white">{{ store.currentServer.name }}</h1>
-          <span
-            :class="store.currentServer.is_active ? 'bg-green-500/10 text-green-400' : 'bg-gray-500/10 text-gray-400'"
-            class="px-2.5 py-0.5 text-xs font-medium rounded-full"
+        <v-btn variant="text" to="/" prepend-icon="mdi-arrow-left" size="small" class="mb-2">
+          Back to Dashboard
+        </v-btn>
+        <div class="d-flex align-center ga-3">
+          <h1 class="text-h4 font-weight-bold">{{ store.currentServer.name }}</h1>
+          <v-chip
+            size="small"
+            :color="store.currentServer.is_active ? 'success' : 'grey'"
+            variant="tonal"
           >
             {{ store.currentServer.is_active ? 'Active' : 'Inactive' }}
-          </span>
+          </v-chip>
         </div>
-        <p class="text-gray-400 mt-1 font-mono text-sm">{{ store.currentServer.mock_url }}</p>
+        <code class="text-caption text-medium-emphasis mt-1 d-block">{{ store.currentServer.mock_url }}</code>
       </div>
-      <div class="flex gap-2">
-        <RouterLink
+      <div class="d-flex ga-2">
+        <v-btn
+          variant="tonal"
           :to="`/servers/${serverId}/edit`"
-          class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+          size="small"
         >
           Edit
-        </RouterLink>
-        <button
+        </v-btn>
+        <v-btn
+          variant="tonal"
+          color="error"
+          size="small"
+          :loading="deleting"
           @click="handleDelete"
-          :disabled="deleting"
-          class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors text-sm"
         >
           Delete
-        </button>
+        </v-btn>
       </div>
     </div>
 
     <!-- Tabs -->
-    <div class="flex gap-1 mb-6 bg-gray-800 rounded-lg p-1 w-fit">
-      <button
-        v-for="tab in (['endpoints', 'logs', 'usage'] as const)"
-        :key="tab"
-        @click="switchTab(tab)"
-        :class="[
-          'px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize',
-          activeTab === tab ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'
-        ]"
-      >
-        {{ tab }}
-      </button>
-    </div>
+    <v-tabs v-model="activeTab" class="mb-6" @update:model-value="onTabChange">
+      <v-tab value="endpoints">Endpoints</v-tab>
+      <v-tab value="credentials">Credentials</v-tab>
+      <v-tab value="logs">Logs</v-tab>
+      <v-tab value="usage">Usage</v-tab>
+    </v-tabs>
 
-    <!-- Endpoints Tab -->
-    <div v-if="activeTab === 'endpoints'">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-white">Endpoints</h2>
-        <button
-          @click="showEndpointForm = !showEndpointForm"
-          class="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm rounded-lg transition-colors"
-        >
-          {{ showEndpointForm ? 'Cancel' : '+ Add Endpoint' }}
-        </button>
-      </div>
+    <v-window v-model="activeTab">
+      <!-- Endpoints Tab -->
+      <v-window-item value="endpoints">
+        <div class="d-flex align-center justify-space-between mb-4">
+          <h2 class="text-h6">Endpoints</h2>
+          <v-btn
+            color="primary"
+            size="small"
+            @click="showEndpointForm = !showEndpointForm"
+          >
+            {{ showEndpointForm ? 'Cancel' : '+ Add Endpoint' }}
+          </v-btn>
+        </div>
 
-      <EndpointForm
-        v-if="showEndpointForm"
-        :server-id="serverId"
-        @created="showEndpointForm = false"
-        class="mb-4"
-      />
+        <EndpointForm
+          v-if="showEndpointForm"
+          :server-id="serverId"
+          @created="showEndpointForm = false"
+          class="mb-4"
+        />
 
-      <EndpointList :endpoints="store.endpoints" />
-    </div>
+        <EndpointList :endpoints="store.endpoints" />
+      </v-window-item>
 
-    <!-- Logs Tab -->
-    <div v-else-if="activeTab === 'logs'">
-      <RequestLogTable :logs="store.logs" :server-id="serverId" />
-    </div>
+      <!-- Credentials Tab -->
+      <v-window-item value="credentials">
+        <div class="d-flex align-center justify-space-between mb-4">
+          <h2 class="text-h6">Credentials</h2>
+          <v-btn
+            color="primary"
+            size="small"
+            @click="showCredentialForm = !showCredentialForm"
+          >
+            {{ showCredentialForm ? 'Cancel' : '+ Add Credential' }}
+          </v-btn>
+        </div>
 
-    <!-- Usage Tab -->
-    <div v-else-if="activeTab === 'usage'">
-      <CodeSnippet :server="store.currentServer" />
-    </div>
+        <CredentialForm
+          v-if="showCredentialForm"
+          :server-id="serverId"
+          :auth-type="store.currentServer.auth_type"
+          @created="showCredentialForm = false"
+          class="mb-4"
+        />
+
+        <CredentialList
+          :credentials="store.credentials"
+          :auth-type="store.currentServer.auth_type"
+          :server-id="serverId"
+        />
+      </v-window-item>
+
+      <!-- Logs Tab -->
+      <v-window-item value="logs">
+        <RequestLogTable :logs="store.logs" :server-id="serverId" />
+      </v-window-item>
+
+      <!-- Usage Tab -->
+      <v-window-item value="usage">
+        <CodeSnippet :server="store.currentServer" />
+      </v-window-item>
+    </v-window>
   </div>
 
-  <div v-else-if="store.loading" class="text-gray-400">Loading...</div>
+  <v-progress-linear v-else-if="store.loading" indeterminate color="primary" />
 </template>

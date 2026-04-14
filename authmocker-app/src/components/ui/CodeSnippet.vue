@@ -3,8 +3,14 @@ import { computed, ref } from 'vue'
 import type { MockServer } from '../../types'
 
 const props = defineProps<{ server: MockServer }>()
-const activeLanguage = ref<'curl' | 'javascript' | 'python'>('curl')
+const activeLanguage = ref('curl')
 const copied = ref(false)
+
+const languages = [
+  { value: 'curl', title: 'cURL' },
+  { value: 'javascript', title: 'JavaScript' },
+  { value: 'python', title: 'Python' },
+]
 
 const snippets = computed(() => {
   const url = props.server.mock_url
@@ -55,7 +61,7 @@ const snippets = computed(() => {
 })
 
 function copyToClipboard() {
-  navigator.clipboard.writeText(snippets.value[activeLanguage.value])
+  navigator.clipboard.writeText(snippets.value[activeLanguage.value as keyof typeof snippets.value])
   copied.value = true
   setTimeout(() => { copied.value = false }, 2000)
 }
@@ -63,49 +69,51 @@ function copyToClipboard() {
 
 <template>
   <div>
-    <h2 class="text-lg font-semibold text-white mb-4">Usage Examples</h2>
+    <h2 class="text-h6 mb-4">Usage Examples</h2>
 
-    <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-      <div class="flex items-center justify-between px-4 py-2 border-b border-gray-700">
-        <div class="flex gap-1">
-          <button
-            v-for="lang in (['curl', 'javascript', 'python'] as const)"
-            :key="lang"
-            @click="activeLanguage = lang"
-            :class="[
-              'px-3 py-1 rounded text-xs font-medium transition-colors capitalize',
-              activeLanguage === lang ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'
-            ]"
+    <v-card>
+      <v-card-text class="pa-0">
+        <div class="d-flex align-center justify-space-between px-4 py-2">
+          <v-tabs v-model="activeLanguage" density="compact">
+            <v-tab v-for="lang in languages" :key="lang.value" :value="lang.value" size="small">
+              {{ lang.title }}
+            </v-tab>
+          </v-tabs>
+          <v-btn
+            variant="text"
+            size="small"
+            :prepend-icon="copied ? 'mdi-check' : 'mdi-content-copy'"
+            @click="copyToClipboard"
           >
-            {{ lang }}
-          </button>
+            {{ copied ? 'Copied!' : 'Copy' }}
+          </v-btn>
         </div>
-        <button
-          @click="copyToClipboard"
-          class="text-gray-400 hover:text-white text-xs transition-colors"
-        >
-          {{ copied ? 'Copied!' : 'Copy' }}
-        </button>
-      </div>
-      <pre class="p-4 text-sm text-gray-300 overflow-x-auto font-mono"><code>{{ snippets[activeLanguage] }}</code></pre>
-    </div>
+        <v-divider />
+        <pre class="pa-4 text-body-2 overflow-x-auto" style="font-family: monospace; margin: 0"><code>{{ snippets[activeLanguage as keyof typeof snippets] }}</code></pre>
+      </v-card-text>
+    </v-card>
 
-    <div class="mt-4 p-4 bg-gray-800 border border-gray-700 rounded-xl">
-      <h3 class="text-sm font-medium text-white mb-2">Mock Server URL</h3>
-      <code class="text-indigo-400 text-sm">{{ server.mock_url }}</code>
+    <v-card class="mt-4">
+      <v-card-text>
+        <h3 class="text-subtitle-2 font-weight-medium mb-2">Mock Server URL</h3>
+        <code class="text-primary">{{ server.mock_url }}</code>
 
-      <h3 class="text-sm font-medium text-white mt-4 mb-2">Special Endpoints</h3>
-      <ul class="text-sm text-gray-400 space-y-1">
-        <li v-if="server.auth_type === 'jwt' || server.auth_type === 'oauth2'">
-          <code class="text-indigo-400">POST {{ server.mock_url }}/token</code> - Get access token
-        </li>
-        <li v-if="server.auth_type === 'oauth2'">
-          <code class="text-indigo-400">POST {{ server.mock_url }}/authorize</code> - OAuth2 authorize
-        </li>
-        <li v-if="server.auth_type === 'session'">
-          <code class="text-indigo-400">POST {{ server.mock_url }}/login</code> - Session login
-        </li>
-      </ul>
-    </div>
+        <h3 class="text-subtitle-2 font-weight-medium mt-4 mb-2">Special Endpoints</h3>
+        <v-list density="compact" class="pa-0">
+          <v-list-item v-if="server.auth_type === 'jwt' || server.auth_type === 'oauth2'" density="compact">
+            <code class="text-primary">POST {{ server.mock_url }}/token</code>
+            <span class="text-medium-emphasis ml-2">- Get access token</span>
+          </v-list-item>
+          <v-list-item v-if="server.auth_type === 'oauth2'" density="compact">
+            <code class="text-primary">POST {{ server.mock_url }}/authorize</code>
+            <span class="text-medium-emphasis ml-2">- OAuth2 authorize</span>
+          </v-list-item>
+          <v-list-item v-if="server.auth_type === 'session'" density="compact">
+            <code class="text-primary">POST {{ server.mock_url }}/login</code>
+            <span class="text-medium-emphasis ml-2">- Session login</span>
+          </v-list-item>
+        </v-list>
+      </v-card-text>
+    </v-card>
   </div>
 </template>

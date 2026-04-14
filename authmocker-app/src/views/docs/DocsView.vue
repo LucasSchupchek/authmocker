@@ -2,99 +2,121 @@
 </script>
 
 <template>
-  <div class="max-w-3xl">
-    <h1 class="text-2xl font-bold text-white mb-6">Documentation</h1>
+  <div style="max-width: 900px;">
+    <h1 class="text-h4 font-weight-bold mb-6">Documentation</h1>
 
-    <div class="space-y-8">
-      <!-- Getting Started -->
-      <section class="bg-gray-800 border border-gray-700 rounded-xl p-6">
-        <h2 class="text-lg font-semibold text-white mb-3">Getting Started</h2>
-        <ol class="list-decimal list-inside text-gray-300 space-y-2 text-sm">
-          <li>Create a new mock server by clicking <strong class="text-white">"New Server"</strong> in the sidebar.</li>
-          <li>Choose an <strong class="text-white">authentication type</strong> (Basic Auth, API Key, JWT, OAuth2, or Session).</li>
-          <li>Configure the authentication parameters as needed.</li>
-          <li>Add <strong class="text-white">endpoints</strong> with custom responses.</li>
+    <v-card class="mb-6">
+      <v-card-title>Getting Started</v-card-title>
+      <v-card-text>
+        <ol class="text-body-2" style="padding-left: 20px">
+          <li class="mb-2">Create a new mock server by clicking <strong>"New Server"</strong> in the sidebar.</li>
+          <li class="mb-2">Choose an <strong>authentication type</strong> (Basic Auth, API Key, JWT, OAuth2, or Session).</li>
+          <li class="mb-2">Configure the authentication parameters as needed.</li>
+          <li class="mb-2">Add <strong>endpoints</strong> with custom responses.</li>
           <li>Use the generated mock URL in your client application.</li>
         </ol>
-      </section>
+      </v-card-text>
+    </v-card>
 
-      <!-- Auth Types -->
-      <section class="bg-gray-800 border border-gray-700 rounded-xl p-6">
-        <h2 class="text-lg font-semibold text-white mb-4">Authentication Types</h2>
+    <v-card class="mb-6">
+      <v-card-title>Authentication Types</v-card-title>
+      <v-card-text>
+        <v-expansion-panels variant="accordion">
+          <v-expansion-panel title="Basic Auth">
+            <v-expansion-panel-text>
+              Send credentials via the <code class="text-primary">Authorization: Basic base64(username:password)</code> header.
+            </v-expansion-panel-text>
+          </v-expansion-panel>
 
-        <div class="space-y-4">
-          <div>
-            <h3 class="text-white font-medium">Basic Auth</h3>
-            <p class="text-gray-400 text-sm mt-1">
-              Send credentials via the <code class="text-indigo-400">Authorization: Basic base64(username:password)</code> header.
-            </p>
-          </div>
-
-          <div>
-            <h3 class="text-white font-medium">API Key</h3>
-            <p class="text-gray-400 text-sm mt-1">
+          <v-expansion-panel title="API Key">
+            <v-expansion-panel-text>
               Send your API key in a header, query parameter, or request body. Configure the location and key name.
-            </p>
-          </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
 
-          <div>
-            <h3 class="text-white font-medium">JWT Bearer Token</h3>
-            <p class="text-gray-400 text-sm mt-1">
-              First, get a token from <code class="text-indigo-400">POST /mock/{'{slug}'}/token</code>.
-              Then use it as <code class="text-indigo-400">Authorization: Bearer {'<token>'}</code>.
+          <v-expansion-panel title="JWT Bearer Token">
+            <v-expansion-panel-text>
+              First, get a token from <code class="text-primary">POST /mock/{'{slug}'}/token</code>.
+              Then use it as <code class="text-primary">Authorization: Bearer &lt;token&gt;</code>.
               Configurable secret, algorithm, expiration, and custom claims.
-            </p>
-          </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
 
-          <div>
-            <h3 class="text-white font-medium">OAuth2</h3>
-            <p class="text-gray-400 text-sm mt-1">
-              Supports <strong class="text-white">Client Credentials</strong> and <strong class="text-white">Authorization Code</strong> flows.
-              Use <code class="text-indigo-400">/authorize</code> and <code class="text-indigo-400">/token</code> endpoints.
-            </p>
-          </div>
+          <v-expansion-panel title="OAuth2">
+            <v-expansion-panel-text>
+              Supports <strong>Client Credentials</strong> and <strong>Authorization Code</strong> flows.
+              Use <code class="text-primary">/authorize</code> and <code class="text-primary">/token</code> endpoints.
+            </v-expansion-panel-text>
+          </v-expansion-panel>
 
-          <div>
-            <h3 class="text-white font-medium">Session / Cookie</h3>
-            <p class="text-gray-400 text-sm mt-1">
-              Login via <code class="text-indigo-400">POST /mock/{'{slug}'}/login</code> with username/password.
+          <v-expansion-panel title="Session / Cookie">
+            <v-expansion-panel-text>
+              Login via <code class="text-primary">POST /mock/{'{slug}'}/login</code> with username/password.
               A session cookie is returned. Include it in subsequent requests.
-            </p>
-          </div>
-        </div>
-      </section>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+      </v-card-text>
+    </v-card>
 
-      <!-- API Docs -->
-      <section class="bg-gray-800 border border-gray-700 rounded-xl p-6">
-        <h2 class="text-lg font-semibold text-white mb-3">API Documentation</h2>
-        <p class="text-gray-400 text-sm mb-3">
-          Full interactive API documentation is available via Swagger UI:
+    <v-card class="mb-6">
+      <v-card-title>API Documentation</v-card-title>
+      <v-card-text>
+        <p class="text-body-2 mb-4">
+          Full interactive API documentation is available via Scramble:
         </p>
-        <a
-          :href="`${$route.query.apiUrl || 'http://localhost:8080'}/api/documentation`"
+        <v-btn
+          href="http://localhost:8080/docs/api"
           target="_blank"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 rounded-lg transition-colors text-sm"
+          color="primary"
+          variant="tonal"
+          prepend-icon="mdi-open-in-new"
         >
-          Open Swagger UI
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-        </a>
-      </section>
+          Open API Docs
+        </v-btn>
+      </v-card-text>
+    </v-card>
 
-      <!-- Mock URL Structure -->
-      <section class="bg-gray-800 border border-gray-700 rounded-xl p-6">
-        <h2 class="text-lg font-semibold text-white mb-3">URL Structure</h2>
-        <div class="bg-gray-900 rounded-lg p-4 font-mono text-sm space-y-2">
-          <p class="text-gray-400"># Your configured endpoints:</p>
-          <p class="text-green-400">GET  /mock/{'{slug}'}/{'{endpoint_path}'}</p>
-          <p class="text-blue-400">POST /mock/{'{slug}'}/{'{endpoint_path}'}</p>
-          <p class="text-gray-400 mt-3"># Special auth endpoints:</p>
-          <p class="text-purple-400">POST /mock/{'{slug}'}/token     <span class="text-gray-500"># JWT & OAuth2</span></p>
-          <p class="text-purple-400">POST /mock/{'{slug}'}/authorize <span class="text-gray-500"># OAuth2 only</span></p>
-          <p class="text-purple-400">POST /mock/{'{slug}'}/login     <span class="text-gray-500"># Session only</span></p>
-        </div>
-      </section>
-    </div>
+    <v-card>
+      <v-card-title>URL Structure</v-card-title>
+      <v-card-text>
+        <v-table density="compact">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><v-chip color="success" size="small" label variant="tonal" class="font-weight-bold">GET</v-chip></td>
+              <td><code>/mock/{'{slug}'}/{'{path}'}</code></td>
+              <td>Your configured endpoints</td>
+            </tr>
+            <tr>
+              <td><v-chip color="info" size="small" label variant="tonal" class="font-weight-bold">POST</v-chip></td>
+              <td><code>/mock/{'{slug}'}/{'{path}'}</code></td>
+              <td>Your configured endpoints</td>
+            </tr>
+            <tr>
+              <td><v-chip color="purple" size="small" label variant="tonal" class="font-weight-bold">POST</v-chip></td>
+              <td><code>/mock/{'{slug}'}/token</code></td>
+              <td>Get access token (JWT &amp; OAuth2)</td>
+            </tr>
+            <tr>
+              <td><v-chip color="purple" size="small" label variant="tonal" class="font-weight-bold">POST</v-chip></td>
+              <td><code>/mock/{'{slug}'}/authorize</code></td>
+              <td>Authorization endpoint (OAuth2 only)</td>
+            </tr>
+            <tr>
+              <td><v-chip color="purple" size="small" label variant="tonal" class="font-weight-bold">POST</v-chip></td>
+              <td><code>/mock/{'{slug}'}/login</code></td>
+              <td>Session login (Session only)</td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-card-text>
+    </v-card>
   </div>
 </template>

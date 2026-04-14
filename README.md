@@ -2,16 +2,19 @@
 
 **Mock Authentication API for Developers** - Create and manage mock authentication servers to test your clients in development.
 
-AuthMocker lets you spin up fully-functional mock auth endpoints in seconds. Configure the authentication type, set up custom endpoints with mock responses, and test your client applications without needing a real auth server.
+AuthMocker lets you spin up fully-functional mock auth endpoints in seconds. Configure the authentication type, create multiple credentials with custom profiles, set up endpoints with mock responses, and test your client applications without needing a real auth server.
 
 ## Features
 
 - **5 Auth Types**: Basic Auth, API Key, JWT Bearer, OAuth2, Session/Cookie
+- **Multi-Credential Support**: Create multiple users/clients per server with custom profiles (name, email, role, custom claims)
+- **OAuth2 Multi-Client**: Configure multiple OAuth2 applications with independent scopes, secrets and redirect URIs
 - **Configurable Endpoints**: Define custom mock responses for any HTTP method and path
-- **Request Logging**: See every request that hits your mock server with full details
+- **Request Logging**: See every request with full details, including which credential was used
 - **Code Snippets**: Auto-generated usage examples in cURL, JavaScript, and Python
-- **API Documentation**: Auto-generated Swagger/OpenAPI docs from code (Scramble)
+- **API Documentation**: Auto-generated OpenAPI docs from code (Scramble)
 - **Redis Cache**: Smart caching with automatic invalidation on writes
+- **Dark/Light Theme**: Toggle between themes with persistent preference
 - **Docker Ready**: One command to spin up the entire stack
 - **User Isolation**: Each user only sees and manages their own mock servers
 
@@ -20,11 +23,11 @@ AuthMocker lets you spin up fully-functional mock auth endpoints in seconds. Con
 | Layer | Technology |
 |-------|-----------|
 | **Backend** | Laravel 12 (PHP 8.2) |
-| **Frontend** | Vue 3 + TypeScript + Vite |
+| **Frontend** | Vue 3 + TypeScript + Vuetify 3 |
 | **Database** | PostgreSQL 16 |
 | **Cache** | Redis |
 | **Auth** | JWT (self-managed, no third-party dependency) |
-| **UI** | Tailwind CSS |
+| **UI** | Vuetify 3 + Material Design Icons |
 | **Docs** | Scramble (auto-generated OpenAPI) |
 | **Infra** | Docker + Docker Compose |
 
@@ -41,6 +44,7 @@ Controllers (input/output only)
 
 - **Controllers** are thin - they only handle request validation (FormRequest) and response formatting (Resource). Zero business logic.
 - **Services** contain all business logic. Authentication mock handling uses the **Strategy Pattern** with a dedicated strategy for each auth type.
+- **Multi-Credential Model**: Server-level config (algorithm, TTLs, key location) is separated from credential-level config (username/password, API keys, client secrets). Each server supports N credentials with custom user profiles.
 - **HasCache Trait** provides reusable cache methods across services. Cache is automatically invalidated on create/update/delete operations.
 - **User isolation** is enforced at the service layer - queries are always scoped by `user_id`.
 
@@ -71,11 +75,6 @@ docker-compose up postgres redis -d
 ```bash
 cd authmocker-api
 cp .env.example .env
-```
-
-Generate the application key:
-
-```bash
 php artisan key:generate
 ```
 
@@ -120,7 +119,7 @@ docker exec authmocker-api php artisan key:generate
 docker exec authmocker-api php artisan migrate --force
 ```
 
-> **Note**: When running the API inside Docker on Windows, set `REDIS_HOST=authmocker-redis` and `DB_HOST=authmocker-postgres` in your `.env` file instead of `127.0.0.1`.
+> **Note**: When running the API inside Docker, set `REDIS_HOST=authmocker-redis` and `DB_HOST=authmocker-postgres` in your `.env` file instead of `127.0.0.1`.
 
 ## Environment Variables
 
@@ -150,9 +149,15 @@ docker exec authmocker-api php artisan migrate --force
 Register via the frontend at http://localhost:3000/register
 
 ### 2. Create a mock server
-Choose an auth type, give it a name and slug. The slug determines your mock URL: `/mock/{slug}/...`
+Choose an auth type, give it a name and slug. The slug determines your mock URL: `/mock/{slug}/...`. A default credential is created automatically.
 
-### 3. Add endpoints
+### 3. Add credentials
+Go to the **Credentials** tab on your server to create multiple users or clients. Each credential has:
+- **Label**: Friendly name (e.g., "Admin User", "Read-Only Client")
+- **Credentials**: Auth-type specific data (username/password, API key, client_id/secret, etc.)
+- **Profile**: Identity data included in tokens/responses (name, email, role, custom claims)
+
+### 4. Add endpoints
 Configure endpoints with:
 - HTTP method (GET, POST, PUT, PATCH, DELETE)
 - Path (e.g., `users`, `products/1`)
@@ -160,21 +165,22 @@ Configure endpoints with:
 - Response body (JSON)
 - Optional delay (simulate latency)
 
-### 4. Test your client
+### 5. Test your client
 
 ```bash
 # API Key example
 curl http://localhost:8080/mock/my-api/users \
   -H "X-API-Key: your-configured-key"
 
-# JWT example - get token first
-curl -X POST http://localhost:8080/mock/my-api/token
+# JWT example - get token for a specific user
+curl -X POST http://localhost:8080/mock/my-api/token \
+  -d '{"sub": "admin"}'
 
-# Then use the token
+# Then use the token (includes the user's profile in claims)
 curl http://localhost:8080/mock/my-api/users \
   -H "Authorization: Bearer <token>"
 
-# OAuth2 - client credentials
+# OAuth2 - client credentials (per-client scopes)
 curl -X POST http://localhost:8080/mock/my-api/token \
   -d "grant_type=client_credentials&client_id=xxx&client_secret=yyy"
 ```
@@ -199,6 +205,16 @@ curl -X POST http://localhost:8080/mock/my-api/token \
 | GET | `/api/servers/{id}` | Get server details |
 | PUT | `/api/servers/{id}` | Update a server |
 | DELETE | `/api/servers/{id}` | Delete a server |
+
+### Mock Credentials (requires auth)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/servers/{id}/credentials` | List credentials |
+| POST | `/api/servers/{id}/credentials` | Create credential |
+| GET | `/api/credentials/{id}` | Get credential details |
+| PUT | `/api/credentials/{id}` | Update credential |
+| DELETE | `/api/credentials/{id}` | Delete credential |
 
 ### Mock Endpoints (requires auth)
 
@@ -246,7 +262,7 @@ AuthMocker/
 │   │   │   ├── Requests/            # FormRequest validation
 │   │   │   ├── Resources/           # API Resource responses
 │   │   │   └── Middleware/           # JWT Auth middleware
-│   │   ├── Models/                  # Eloquent models (User, MockServer, MockEndpoint, RequestLog)
+│   │   ├── Models/                  # User, MockServer, MockEndpoint, MockCredential, RequestLog
 │   │   ├── Services/                # Business logic
 │   │   │   └── MockHandler/         # Strategy Pattern (5 auth strategies)
 │   │   └── Traits/                  # HasCache trait
@@ -255,9 +271,16 @@ AuthMocker/
 │   └── config/
 └── authmocker-app/                  # Vue.js Frontend
     └── src/
-        ├── components/              # Reusable UI components
-        ├── views/                   # Page views
-        ├── stores/                  # Pinia stores (auth, servers)
+        ├── components/
+        │   ├── credentials/         # CredentialList, CredentialForm, CredentialConfigFields
+        │   ├── endpoints/           # EndpointList, EndpointForm
+        │   ├── layout/              # AppLayout (sidebar, app bar, theme toggle)
+        │   ├── logs/                # RequestLogTable
+        │   ├── servers/             # ServerCard, AuthTypeSelector, AuthConfigForm
+        │   └── ui/                  # CodeSnippet
+        ├── plugins/                 # Vuetify configuration
+        ├── views/                   # Login, Register, Dashboard, Server CRUD, Docs
+        ├── stores/                  # Pinia stores (auth, servers, theme)
         ├── services/                # API client (Axios)
         ├── router/                  # Vue Router with auth guards
         └── types/                   # TypeScript interfaces

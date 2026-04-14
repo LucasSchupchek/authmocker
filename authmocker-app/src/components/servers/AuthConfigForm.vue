@@ -13,16 +13,19 @@ function updateField(key: string, value: any) {
   emit('update:modelValue', { ...props.modelValue, [key]: value })
 }
 
+const hint = computed(() => {
+  if (props.authType === 'basic_auth') {
+    return 'Credentials are managed in the Credentials tab'
+  }
+  return ''
+})
+
 const fields = computed(() => {
   switch (props.authType) {
     case 'basic_auth':
-      return [
-        { key: 'username', label: 'Username', type: 'text' },
-        { key: 'password', label: 'Password', type: 'text' },
-      ]
+      return []
     case 'api_key':
       return [
-        { key: 'key', label: 'API Key', type: 'text' },
         { key: 'location', label: 'Key Location', type: 'select', options: ['header', 'query', 'body'] },
         { key: 'header_name', label: 'Header Name', type: 'text', condition: () => props.modelValue.location === 'header' },
         { key: 'query_param', label: 'Query Param Name', type: 'text', condition: () => props.modelValue.location === 'query' },
@@ -36,16 +39,11 @@ const fields = computed(() => {
       ]
     case 'oauth2':
       return [
-        { key: 'client_id', label: 'Client ID', type: 'text' },
-        { key: 'client_secret', label: 'Client Secret', type: 'text' },
-        { key: 'redirect_uri', label: 'Redirect URI', type: 'text' },
         { key: 'access_token_ttl', label: 'Access Token TTL (seconds)', type: 'number' },
         { key: 'refresh_token_ttl', label: 'Refresh Token TTL (seconds)', type: 'number' },
       ]
     case 'session':
       return [
-        { key: 'username', label: 'Username', type: 'text' },
-        { key: 'password', label: 'Password', type: 'text' },
         { key: 'session_ttl_minutes', label: 'Session TTL (minutes)', type: 'number' },
         { key: 'cookie_name', label: 'Cookie Name', type: 'text' },
       ]
@@ -60,30 +58,30 @@ const visibleFields = computed(() =>
 </script>
 
 <template>
-  <div class="space-y-4">
-    <div v-for="field in visibleFields" :key="field.key">
-      <label :for="field.key" class="block text-sm font-medium text-gray-300 mb-1">
-        {{ field.label }}
-      </label>
-
-      <select
+  <div>
+    <div v-if="hint" class="text-body-2 text-medium-emphasis mb-3">{{ hint }}</div>
+    <template v-for="field in visibleFields" :key="field.key">
+      <v-select
         v-if="field.type === 'select'"
-        :id="field.key"
-        :value="config[field.key]"
-        @change="updateField(field.key, ($event.target as HTMLSelectElement).value)"
-        class="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      >
-        <option v-for="opt in field.options" :key="opt" :value="opt">{{ opt }}</option>
-      </select>
-
-      <input
-        v-else
-        :id="field.key"
-        :type="field.type"
-        :value="config[field.key]"
-        @input="updateField(field.key, field.type === 'number' ? Number(($event.target as HTMLInputElement).value) : ($event.target as HTMLInputElement).value)"
-        class="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        :label="field.label"
+        :model-value="config[field.key]"
+        :items="field.options"
+        @update:model-value="updateField(field.key, $event)"
+        variant="outlined"
+        density="comfortable"
+        class="mb-2"
       />
-    </div>
+
+      <v-text-field
+        v-else
+        :label="field.label"
+        :type="field.type"
+        :model-value="config[field.key]"
+        @update:model-value="updateField(field.key, field.type === 'number' ? Number($event) : $event)"
+        variant="outlined"
+        density="comfortable"
+        class="mb-2"
+      />
+    </template>
   </div>
 </template>

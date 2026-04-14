@@ -52,70 +52,40 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <form @submit.prevent="handleSubmit" class="bg-gray-800 border border-gray-700 rounded-xl p-5 space-y-4">
-    <div v-if="error" class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-      {{ error }}
-    </div>
+  <v-card class="mb-4">
+    <v-card-text>
+      <v-form @submit.prevent="handleSubmit">
+        <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mb-4">
+          {{ error }}
+        </v-alert>
 
-    <div class="grid grid-cols-4 gap-3">
-      <div>
-        <label class="block text-sm font-medium text-gray-300 mb-1">Method</label>
-        <select
-          v-model="method"
-          class="w-full px-3 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option v-for="m in methods" :key="m" :value="m">{{ m }}</option>
-        </select>
-      </div>
-      <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-300 mb-1">Path</label>
-        <input
-          v-model="path"
-          type="text"
-          required
-          placeholder="users"
-          class="w-full px-3 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-300 mb-1">Status</label>
-        <input
-          v-model.number="responseStatus"
-          type="number"
-          min="100"
-          max="599"
-          class="w-full px-3 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-      </div>
-    </div>
+        <v-row>
+          <v-col cols="3">
+            <v-select v-model="method" :items="methods" label="Method" />
+          </v-col>
+          <v-col cols="5">
+            <v-text-field v-model="path" label="Path" placeholder="users" required />
+          </v-col>
+          <v-col cols="2">
+            <v-text-field v-model.number="responseStatus" label="Status" type="number" min="100" max="599" />
+          </v-col>
+          <v-col cols="2">
+            <v-text-field v-model.number="delayMs" label="Delay (ms)" type="number" min="0" max="30000" />
+          </v-col>
+        </v-row>
 
-    <div>
-      <label class="block text-sm font-medium text-gray-300 mb-1">Response Body (JSON)</label>
-      <textarea
-        v-model="responseBody"
-        rows="4"
-        class="w-full px-3 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-      />
-    </div>
-
-    <div class="flex items-end gap-3">
-      <div class="w-32">
-        <label class="block text-sm font-medium text-gray-300 mb-1">Delay (ms)</label>
-        <input
-          v-model.number="delayMs"
-          type="number"
-          min="0"
-          max="30000"
-          class="w-full px-3 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        <v-textarea
+          v-model="responseBody"
+          label="Response Body (JSON)"
+          rows="4"
+          style="font-family: monospace"
+          class="mb-4"
         />
-      </div>
-      <button
-        type="submit"
-        :disabled="loading || !path"
-        class="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
-      >
-        {{ loading ? 'Creating...' : 'Add Endpoint' }}
-      </button>
-    </div>
-  </form>
+
+        <v-btn type="submit" color="primary" :loading="loading" :disabled="loading || !path">
+          Add Endpoint
+        </v-btn>
+      </v-form>
+    </v-card-text>
+  </v-card>
 </template>

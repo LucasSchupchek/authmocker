@@ -12,7 +12,8 @@ class AuthTypeController extends Controller
         $types = array_map(fn(AuthType $type) => [
             'value' => $type->value,
             'label' => $type->label(),
-            'default_config' => $type->defaultConfig(),
+            'default_server_config' => $type->defaultServerConfig(),
+            'default_credential' => $type->defaultCredential(),
         ], AuthType::cases());
 
         return response()->json(['data' => $types]);

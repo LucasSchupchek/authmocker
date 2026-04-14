@@ -6,11 +6,13 @@ const auth = useAuthStore()
 </script>
 
 <template>
-  <div v-if="auth.loading" class="min-h-screen flex items-center justify-center bg-gray-900">
-    <div class="text-white text-lg">Loading...</div>
-  </div>
-  <AppLayout v-else-if="auth.isAuthenticated">
-    <RouterView />
-  </AppLayout>
-  <RouterView v-else />
+  <v-app>
+    <div v-if="auth.loading" class="d-flex align-center justify-center" style="min-height: 100vh">
+      <v-progress-circular indeterminate color="primary" size="48" />
+    </div>
+    <AppLayout v-else-if="auth.isAuthenticated">
+      <RouterView />
+    </AppLayout>
+    <RouterView v-else />
+  </v-app>
 </template>

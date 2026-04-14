@@ -20,7 +20,9 @@ class MockServerResource extends JsonResource
             'description' => $this->description,
             'mock_url' => url("/mock/{$this->slug}"),
             'endpoints_count' => $this->whenCounted('endpoints'),
+            'credentials_count' => $this->whenCounted('credentials'),
             'endpoints' => MockEndpointResource::collection($this->whenLoaded('endpoints')),
+            'credentials' => MockCredentialResource::collection($this->whenLoaded('credentials')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

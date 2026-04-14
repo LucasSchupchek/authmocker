@@ -16,6 +16,7 @@ class RequestLog extends Model
     protected $fillable = [
         'mock_server_id',
         'mock_endpoint_id',
+        'mock_credential_id',
         'method',
         'path',
         'headers',
@@ -43,5 +44,10 @@ class RequestLog extends Model
     public function mockEndpoint(): BelongsTo
     {
         return $this->belongsTo(MockEndpoint::class);
+    }
+
+    public function mockCredential(): BelongsTo
+    {
+        return $this->belongsTo(MockCredential::class);
     }
 }

@@ -44,6 +44,7 @@ const router = createRouter({
       path: '/docs',
       name: 'docs',
       component: () => import('../views/docs/DocsView.vue'),
+      meta: { auth: true },
     },
   ],
 })

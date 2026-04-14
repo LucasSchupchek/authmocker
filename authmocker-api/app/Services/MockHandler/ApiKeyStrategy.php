@@ -2,13 +2,14 @@
 
 namespace App\Services\MockHandler;
 
+use App\Models\MockCredential;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
 class ApiKeyStrategy implements AuthStrategyInterface
 {
-    public function validate(Request $request, array $config): bool
+    public function validate(Request $request, array $config, Collection $credentials): ?MockCredential
     {
-        $expectedKey = $config['key'] ?? '';
         $location = $config['location'] ?? 'header';
 
         $providedKey = match ($location) {
@@ -18,10 +19,21 @@ class ApiKeyStrategy implements AuthStrategyInterface
             default => '',
         };
 
-        return $providedKey === $expectedKey;
+        if (empty($providedKey)) {
+            return null;
+        }
+
+        foreach ($credentials as $credential) {
+            $creds = $credential->credentials ?? [];
+            if (($creds['key'] ?? '') === $providedKey) {
+                return $credential;
+            }
+        }
+
+        return null;
     }
 
-    public function getTokenEndpointResponse(Request $request, array $config): array
+    public function getTokenEndpointResponse(Request $request, array $config, Collection $credentials): array
     {
         $location = $config['location'] ?? 'header';
         $headerName = $config['header_name'] ?? 'X-API-Key';
@@ -32,9 +44,9 @@ class ApiKeyStrategy implements AuthStrategyInterface
                 'message' => 'API Key auth does not use token endpoints. Include your key in requests.',
                 'location' => $location,
                 'example' => match ($location) {
-                    'header' => "{$headerName}: {$config['key']}",
-                    'query' => "?api_key={$config['key']}",
-                    'body' => json_encode(['api_key' => $config['key']]),
+                    'header' => "{$headerName}: <your-api-key>",
+                    'query' => "?api_key=<your-api-key>",
+                    'body' => json_encode(['api_key' => '<your-api-key>']),
                     default => '',
                 },
             ],

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AuthTypeController;
+use App\Http\Controllers\MockCredentialController;
 use App\Http\Controllers\MockEndpointController;
 use App\Http\Controllers\MockHandlerController;
 use App\Http\Controllers\MockServerController;
@@ -45,6 +46,13 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('endpoints/{endpoint}', [MockEndpointController::class, 'show']);
     Route::put('endpoints/{endpoint}', [MockEndpointController::class, 'update']);
     Route::delete('endpoints/{endpoint}', [MockEndpointController::class, 'destroy']);
+
+    // Mock Credentials
+    Route::get('servers/{server}/credentials', [MockCredentialController::class, 'index']);
+    Route::post('servers/{server}/credentials', [MockCredentialController::class, 'store']);
+    Route::get('credentials/{credential}', [MockCredentialController::class, 'show']);
+    Route::put('credentials/{credential}', [MockCredentialController::class, 'update']);
+    Route::delete('credentials/{credential}', [MockCredentialController::class, 'destroy']);
 
     // Request Logs
     Route::get('servers/{server}/logs', [RequestLogController::class, 'index']);

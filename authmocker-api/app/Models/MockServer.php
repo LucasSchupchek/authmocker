@@ -33,6 +33,11 @@ class MockServer extends Model
         return $this->hasMany(MockEndpoint::class);
     }
 
+    public function credentials(): HasMany
+    {
+        return $this->hasMany(MockCredential::class);
+    }
+
     public function requestLogs(): HasMany
     {
         return $this->hasMany(RequestLog::class);

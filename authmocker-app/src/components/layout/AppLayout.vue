@@ -1,9 +1,20 @@
 <script setup lang="ts">
+import { watch } from 'vue'
+import { useTheme } from 'vuetify'
 import { useAuthStore } from '../../stores/auth'
+import { useThemeStore } from '../../stores/theme'
 import { useRouter } from 'vue-router'
 
 const auth = useAuthStore()
+const themeStore = useThemeStore()
 const router = useRouter()
+const vuetifyTheme = useTheme()
+
+// Sync store with Vuetify theme
+vuetifyTheme.global.name.value = themeStore.isDark ? 'dark' : 'light'
+watch(() => themeStore.isDark, (dark) => {
+  vuetifyTheme.global.name.value = dark ? 'dark' : 'light'
+})
 
 async function handleSignOut() {
   await auth.signOut()
@@ -12,70 +23,62 @@ async function handleSignOut() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-900">
-    <!-- Sidebar -->
-    <aside class="fixed inset-y-0 left-0 w-64 bg-gray-800 border-r border-gray-700">
-      <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-700">
-        <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
-          <span class="text-white font-bold text-sm">AM</span>
-        </div>
-        <span class="text-white font-semibold text-lg">AuthMocker</span>
-      </div>
+  <v-navigation-drawer permanent rail-width="72" width="280">
+    <div class="d-flex align-center ga-3 pa-4" style="border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity))">
+      <v-avatar color="primary" size="36" rounded="lg">
+        <span class="text-body-1 font-weight-bold">AM</span>
+      </v-avatar>
+      <span class="text-h6 font-weight-bold">AuthMocker</span>
+    </div>
 
-      <nav class="p-4 space-y-1">
-        <RouterLink
-          to="/"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-          active-class="bg-gray-700 text-white"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-          </svg>
-          Dashboard
-        </RouterLink>
+    <v-list nav density="compact" class="mt-2">
+      <v-list-item
+        to="/"
+        prepend-icon="mdi-view-dashboard"
+        title="Dashboard"
+        exact
+      />
+      <v-list-item
+        to="/servers/create"
+        prepend-icon="mdi-plus-circle"
+        title="New Server"
+      />
+      <v-list-item
+        to="/docs"
+        prepend-icon="mdi-file-document"
+        title="Docs"
+      />
+    </v-list>
 
-        <RouterLink
-          to="/servers/create"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-          active-class="bg-gray-700 text-white"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          New Server
-        </RouterLink>
-
-        <RouterLink
-          to="/docs"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-          active-class="bg-gray-700 text-white"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Docs
-        </RouterLink>
-      </nav>
-
-      <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
-        <div class="flex items-center justify-between">
-          <span class="text-gray-400 text-sm truncate">{{ auth.user?.email }}</span>
-          <button
+    <template #append>
+      <div class="pa-4" style="border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity))">
+        <div class="d-flex align-center justify-space-between">
+          <span class="text-body-2 text-medium-emphasis text-truncate">{{ auth.user?.email }}</span>
+          <v-btn
+            icon="mdi-logout"
+            size="small"
+            variant="text"
+            color="error"
             @click="handleSignOut"
-            class="text-gray-400 hover:text-red-400 transition-colors"
             title="Sign out"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
+          />
         </div>
       </div>
-    </aside>
+    </template>
+  </v-navigation-drawer>
 
-    <!-- Main content -->
-    <main class="ml-64 p-8">
+  <v-app-bar flat density="compact">
+    <v-spacer />
+    <v-btn
+      :icon="themeStore.isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
+      variant="text"
+      @click="themeStore.toggle()"
+    />
+  </v-app-bar>
+
+  <v-main>
+    <v-container>
       <slot />
-    </main>
-  </div>
+    </v-container>
+  </v-main>
 </template>

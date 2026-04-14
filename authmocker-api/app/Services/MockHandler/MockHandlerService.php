@@ -3,6 +3,7 @@
 namespace App\Services\MockHandler;
 
 use App\Enums\AuthStatus;
+use App\Models\MockCredential;
 use App\Models\MockEndpoint;
 use App\Models\MockServer;
 use App\Models\RequestLog;
@@ -29,19 +30,20 @@ class MockHandlerService
 
         $strategy = AuthStrategyFactory::make($server->auth_type);
         $config = $server->config ?? [];
+        $credentials = $server->credentials;
 
         if ($this->isTokenEndpoint($path)) {
-            return $this->handleTokenRequest($request, $server, $strategy, $config, $path);
+            return $this->handleTokenRequest($request, $server, $strategy, $config, $credentials, $path);
         }
 
         if ($this->isAuthorizeEndpoint($path)) {
-            return $this->handleAuthorizeRequest($request, $server, $strategy, $config);
+            return $this->handleAuthorizeRequest($request, $server, $strategy, $config, $credentials);
         }
 
-        $authValid = $strategy->validate($request, $config);
-        $authStatus = $authValid ? AuthStatus::SUCCESS : AuthStatus::FAILED;
+        $matchedCredential = $strategy->validate($request, $config, $credentials);
+        $authStatus = $matchedCredential ? AuthStatus::SUCCESS : AuthStatus::FAILED;
 
-        if (!$authValid) {
+        if (!$matchedCredential) {
             $errorResponse = $strategy->getErrorResponse();
             $this->logRequest($request, $server, null, $path, $authStatus, $errorResponse['status']);
 
@@ -55,7 +57,7 @@ class MockHandlerService
         $endpoint = $this->findEndpoint($server, $request->method(), $path);
 
         if (!$endpoint) {
-            $this->logRequest($request, $server, null, $path, $authStatus, 404);
+            $this->logRequest($request, $server, null, $path, $authStatus, 404, $matchedCredential);
 
             return response()->json([
                 'error' => 'Not Found',
@@ -67,7 +69,7 @@ class MockHandlerService
             usleep($endpoint->delay_ms * 1000);
         }
 
-        $this->logRequest($request, $server, $endpoint, $path, $authStatus, $endpoint->response_status);
+        $this->logRequest($request, $server, $endpoint, $path, $authStatus, $endpoint->response_status, $matchedCredential);
 
         return response()->json(
             $endpoint->response_body ?? [],
@@ -91,14 +93,23 @@ class MockHandlerService
         MockServer $server,
         AuthStrategyInterface $strategy,
         array $config,
+        $credentials,
         ?string $path
     ): JsonResponse {
-        $response = $strategy->getTokenEndpointResponse($request, $config);
+        $response = $strategy->getTokenEndpointResponse($request, $config, $credentials);
+
+        $matchedCredentialId = $response['matched_credential_id'] ?? null;
+        $matchedCredential = null;
+
+        if ($matchedCredentialId && $credentials->isNotEmpty()) {
+            $matchedCredential = $credentials->firstWhere('id', $matchedCredentialId);
+        }
 
         $this->logRequest(
             $request, $server, null, $path,
             $response['status'] === 200 ? AuthStatus::SUCCESS : AuthStatus::FAILED,
-            $response['status']
+            $response['status'],
+            $matchedCredential
         );
 
         $jsonResponse = response()->json($response['body'], $response['status']);
@@ -124,11 +135,20 @@ class MockHandlerService
         Request $request,
         MockServer $server,
         AuthStrategyInterface $strategy,
-        array $config
+        array $config,
+        $credentials
     ): JsonResponse {
         if ($strategy instanceof OAuth2Strategy) {
-            $response = $strategy->getAuthorizeResponse($request, $config);
-            $this->logRequest($request, $server, null, 'authorize', AuthStatus::SUCCESS, $response['status']);
+            $response = $strategy->getAuthorizeResponse($request, $config, $credentials);
+
+            $matchedCredentialId = $response['matched_credential_id'] ?? null;
+            $matchedCredential = null;
+
+            if ($matchedCredentialId && $credentials->isNotEmpty()) {
+                $matchedCredential = $credentials->firstWhere('id', $matchedCredentialId);
+            }
+
+            $this->logRequest($request, $server, null, 'authorize', AuthStatus::SUCCESS, $response['status'], $matchedCredential);
             return response()->json($response['body'], $response['status']);
         }
 
@@ -158,11 +178,13 @@ class MockHandlerService
         ?MockEndpoint $endpoint,
         ?string $path,
         AuthStatus $authStatus,
-        int $responseStatus
+        int $responseStatus,
+        ?MockCredential $matchedCredential = null
     ): void {
         RequestLog::create([
             'mock_server_id' => $server->id,
             'mock_endpoint_id' => $endpoint?->id,
+            'mock_credential_id' => $matchedCredential?->id,
             'method' => $request->method(),
             'path' => $path ?? '/',
             'headers' => $this->sanitizeHeaders($request->headers->all()),
@@ -181,7 +203,7 @@ class MockHandlerService
             self::SERVER_CACHE_TTL,
             fn () => MockServer::where('slug', $slug)
                 ->where('is_active', true)
-                ->with('endpoints')
+                ->with(['endpoints', 'credentials' => fn ($q) => $q->where('is_active', true)])
                 ->first()
         );
     }

@@ -50,73 +50,71 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="max-w-2xl" v-if="store.currentServer">
+  <div style="max-width: 720px;" v-if="store.currentServer">
     <div class="mb-8">
-      <RouterLink :to="`/servers/${serverId}`" class="text-gray-400 hover:text-white text-sm transition-colors">
-        &larr; Back to Server
-      </RouterLink>
-      <h1 class="text-2xl font-bold text-white mt-2">Edit Server</h1>
+      <v-btn variant="text" :to="`/servers/${serverId}`" prepend-icon="mdi-arrow-left" size="small" class="mb-2">
+        Back to Server
+      </v-btn>
+      <h1 class="text-h4 font-weight-bold">Edit Server</h1>
     </div>
 
-    <form @submit.prevent="handleSubmit" class="space-y-6">
-      <div v-if="error" class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+    <v-form @submit.prevent="handleSubmit">
+      <v-alert v-if="error" type="error" variant="tonal" closable class="mb-6" @click:close="error = ''">
         {{ error }}
-      </div>
+      </v-alert>
 
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Server Name</label>
-          <input
+      <v-row class="mb-2">
+        <v-col cols="12" sm="6">
+          <v-text-field
             v-model="name"
-            type="text"
+            label="Server Name"
+            variant="outlined"
+            density="comfortable"
             required
-            class="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Slug</label>
-          <input
+        </v-col>
+        <v-col cols="12" sm="6">
+          <v-text-field
             v-model="slug"
-            type="text"
+            label="Slug"
+            variant="outlined"
+            density="comfortable"
             required
-            class="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
-        </div>
-      </div>
+        </v-col>
+      </v-row>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-300 mb-1">Description</label>
-        <textarea
-          v-model="description"
-          rows="2"
-          class="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-      </div>
+      <v-textarea
+        v-model="description"
+        label="Description"
+        variant="outlined"
+        density="comfortable"
+        rows="2"
+        no-resize
+        class="mb-2"
+      />
 
-      <div class="flex items-center gap-3">
-        <input
-          id="active"
-          v-model="isActive"
-          type="checkbox"
-          class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500"
-        />
-        <label for="active" class="text-sm text-gray-300">Server is active</label>
-      </div>
+      <v-switch
+        v-model="isActive"
+        label="Server is active"
+        color="primary"
+        class="mb-4"
+      />
 
-      <div>
-        <label class="block text-sm font-medium text-gray-300 mb-3">Auth Configuration</label>
-        <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
-          <AuthConfigForm :auth-type="store.currentServer.auth_type" v-model="config" />
-        </div>
-      </div>
+      <v-card variant="outlined" class="mb-6 pa-5">
+        <div class="text-subtitle-2 font-weight-medium mb-3">Auth Configuration</div>
+        <AuthConfigForm :auth-type="store.currentServer.auth_type" v-model="config" />
+      </v-card>
 
-      <button
+      <v-btn
         type="submit"
-        :disabled="loading"
-        class="w-full px-4 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
+        color="primary"
+        block
+        size="large"
+        :loading="loading"
       >
-        {{ loading ? 'Saving...' : 'Save Changes' }}
-      </button>
-    </form>
+        Save Changes
+      </v-btn>
+    </v-form>
   </div>
 </template>

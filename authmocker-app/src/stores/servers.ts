@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '../services/api'
-import type { MockServer, MockEndpoint, RequestLog } from '../types'
+import type { MockServer, MockEndpoint, RequestLog, MockCredential } from '../types'
 
 export const useServersStore = defineStore('servers', () => {
   const servers = ref<MockServer[]>([])
   const currentServer = ref<MockServer | null>(null)
   const endpoints = ref<MockEndpoint[]>([])
+  const credentials = ref<MockCredential[]>([])
   const logs = ref<RequestLog[]>([])
   const loading = ref(false)
 
@@ -73,6 +74,29 @@ export const useServersStore = defineStore('servers', () => {
     endpoints.value = endpoints.value.filter(e => e.id !== id)
   }
 
+  async function fetchCredentials(serverId: string) {
+    const { data } = await api.get(`/servers/${serverId}/credentials`)
+    credentials.value = data.data
+  }
+
+  async function createCredential(serverId: string, payload: Partial<MockCredential>) {
+    const { data } = await api.post(`/servers/${serverId}/credentials`, payload)
+    credentials.value.push(data.data)
+    return data.data
+  }
+
+  async function updateCredential(id: string, payload: Partial<MockCredential>) {
+    const { data } = await api.put(`/credentials/${id}`, payload)
+    const idx = credentials.value.findIndex(c => c.id === id)
+    if (idx !== -1) credentials.value[idx] = data.data
+    return data.data
+  }
+
+  async function deleteCredential(id: string) {
+    await api.delete(`/credentials/${id}`)
+    credentials.value = credentials.value.filter(c => c.id !== id)
+  }
+
   async function fetchLogs(serverId: string) {
     const { data } = await api.get(`/servers/${serverId}/logs`)
     logs.value = data.data
@@ -84,9 +108,10 @@ export const useServersStore = defineStore('servers', () => {
   }
 
   return {
-    servers, currentServer, endpoints, logs, loading,
+    servers, currentServer, endpoints, credentials, logs, loading,
     fetchServers, fetchServer, createServer, updateServer, deleteServer,
     fetchEndpoints, createEndpoint, updateEndpoint, deleteEndpoint,
+    fetchCredentials, createCredential, updateCredential, deleteCredential,
     fetchLogs, clearLogs,
   }
 })

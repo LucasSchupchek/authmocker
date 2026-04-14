@@ -18,11 +18,11 @@ const error = ref('')
 const loading = ref(false)
 
 const defaultConfigs: Record<string, Record<string, any>> = {
-  basic_auth: { username: 'admin', password: 'password' },
-  api_key: { key: '', location: 'header', header_name: 'X-API-Key' },
+  basic_auth: {},
+  api_key: { location: 'header', header_name: 'X-API-Key' },
   jwt: { secret: '', algorithm: 'HS256', expiration_minutes: 60 },
-  oauth2: { client_id: '', client_secret: '', redirect_uri: 'http://localhost:3000/callback', access_token_ttl: 3600, refresh_token_ttl: 86400 },
-  session: { username: 'admin', password: 'password', session_ttl_minutes: 120, cookie_name: 'mock_session' },
+  oauth2: { access_token_ttl: 3600, refresh_token_ttl: 86400 },
+  session: { session_ttl_minutes: 120, cookie_name: 'mock_session' },
 }
 
 watch(authType, async (type) => {
@@ -30,7 +30,7 @@ watch(authType, async (type) => {
     try {
       const { data } = await api.get('/auth-types')
       const found = data.data.find((t: any) => t.value === type)
-      config.value = found?.default_config || defaultConfigs[type] || {}
+      config.value = found?.default_server_config || defaultConfigs[type] || {}
     } catch {
       config.value = defaultConfigs[type] || {}
     }
@@ -62,78 +62,81 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="max-w-2xl">
+  <div style="max-width: 720px;">
     <div class="mb-8">
-      <RouterLink to="/" class="text-gray-400 hover:text-white text-sm transition-colors">
-        &larr; Back to Dashboard
-      </RouterLink>
-      <h1 class="text-2xl font-bold text-white mt-2">Create Mock Server</h1>
+      <v-btn variant="text" to="/" prepend-icon="mdi-arrow-left" size="small" class="mb-2">
+        Back to Dashboard
+      </v-btn>
+      <h1 class="text-h4 font-weight-bold">Create Mock Server</h1>
     </div>
 
-    <form @submit.prevent="handleSubmit" class="space-y-6">
-      <div v-if="error" class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+    <v-form @submit.prevent="handleSubmit">
+      <v-alert v-if="error" type="error" variant="tonal" closable class="mb-6" @click:close="error = ''">
         {{ error }}
-      </div>
+      </v-alert>
 
       <!-- Auth Type -->
-      <div>
-        <label class="block text-sm font-medium text-gray-300 mb-3">Authentication Type</label>
+      <div class="mb-6">
+        <div class="text-subtitle-2 font-weight-medium mb-3">Authentication Type</div>
         <AuthTypeSelector :selected="authType" @select="authType = $event" />
       </div>
 
       <!-- Name & Slug -->
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Server Name</label>
-          <input
+      <v-row class="mb-2">
+        <v-col cols="12" sm="6">
+          <v-text-field
             v-model="name"
-            type="text"
-            required
-            class="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            label="Server Name"
             placeholder="My API Server"
+            variant="outlined"
+            density="comfortable"
+            required
           />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Slug (URL)</label>
-          <div class="flex">
-            <span class="px-3 py-2.5 bg-gray-700 border border-r-0 border-gray-600 rounded-l-lg text-gray-400 text-sm">/mock/</span>
-            <input
-              v-model="slug"
-              type="text"
-              required
-              class="flex-1 px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-r-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="my-api"
-            />
-          </div>
-        </div>
-      </div>
+        </v-col>
+        <v-col cols="12" sm="6">
+          <v-text-field
+            v-model="slug"
+            label="Slug (URL)"
+            placeholder="my-api"
+            variant="outlined"
+            density="comfortable"
+            required
+          >
+            <template #prepend-inner>
+              <span class="text-medium-emphasis text-body-2">/mock/</span>
+            </template>
+          </v-text-field>
+        </v-col>
+      </v-row>
 
       <!-- Description -->
-      <div>
-        <label class="block text-sm font-medium text-gray-300 mb-1">Description (optional)</label>
-        <textarea
-          v-model="description"
-          rows="2"
-          class="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-          placeholder="What is this mock server for?"
-        />
-      </div>
+      <v-textarea
+        v-model="description"
+        label="Description (optional)"
+        placeholder="What is this mock server for?"
+        variant="outlined"
+        density="comfortable"
+        rows="2"
+        no-resize
+        class="mb-2"
+      />
 
       <!-- Auth Config -->
-      <div v-if="authType">
-        <label class="block text-sm font-medium text-gray-300 mb-3">Auth Configuration</label>
-        <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
-          <AuthConfigForm :auth-type="authType" v-model="config" />
-        </div>
-      </div>
+      <v-card v-if="authType" variant="outlined" class="mb-6 pa-5">
+        <div class="text-subtitle-2 font-weight-medium mb-3">Auth Configuration</div>
+        <AuthConfigForm :auth-type="authType" v-model="config" />
+      </v-card>
 
-      <button
+      <v-btn
         type="submit"
-        :disabled="loading || !authType || !name || !slug"
-        class="w-full px-4 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+        color="primary"
+        block
+        size="large"
+        :loading="loading"
+        :disabled="!authType || !name || !slug"
       >
-        {{ loading ? 'Creating...' : 'Create Server' }}
-      </button>
-    </form>
+        Create Server
+      </v-btn>
+    </v-form>
   </div>
 </template>
