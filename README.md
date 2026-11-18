@@ -4,6 +4,8 @@
 
 AuthMocker lets you spin up fully-functional mock auth endpoints in seconds. Configure the authentication type, create multiple credentials with custom profiles, set up endpoints with mock responses, and test your client applications without needing a real auth server.
 
+![AuthMocker dashboard with one mock server per auth type](docs/screenshots/dashboard.png)
+
 ## Features
 
 - **5 Auth Types**: Basic Auth, API Key, JWT Bearer, OAuth2, Session/Cookie
@@ -17,6 +19,16 @@ AuthMocker lets you spin up fully-functional mock auth endpoints in seconds. Con
 - **Dark/Light Theme**: Toggle between themes with persistent preference
 - **Docker Ready**: One command to spin up the entire stack
 - **User Isolation**: Each user only sees and manages their own mock servers
+
+## Screenshots
+
+**Request logs** - every call to a mock server, with the auth result and the credential that made it:
+
+![Request logs showing successful and failed calls per credential](docs/screenshots/request-logs.png)
+
+**Login**
+
+<img src="docs/screenshots/login.png" alt="AuthMocker login screen" width="600">
 
 ## Tech Stack
 
