@@ -5,12 +5,11 @@ namespace App\Services\MockHandler;
 use App\Models\MockCredential;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class SessionStrategy implements AuthStrategyInterface
 {
-    private static array $activeSessions = [];
-
     public function validate(Request $request, array $config, Collection $credentials): ?MockCredential
     {
         $cookieName = $config['cookie_name'] ?? 'mock_session';
@@ -20,17 +19,10 @@ class SessionStrategy implements AuthStrategyInterface
             return null;
         }
 
-        $sessionKey = $this->getSessionKey($config);
+        // Sessions live in the cache so they survive across requests; the cache TTL handles expiry.
+        $session = Cache::get($this->getCacheKey($config, $sessionToken));
 
-        if (!isset(self::$activeSessions[$sessionKey][$sessionToken])) {
-            return null;
-        }
-
-        $session = self::$activeSessions[$sessionKey][$sessionToken];
-        $ttlMinutes = $config['session_ttl_minutes'] ?? 120;
-
-        if (time() > ($session['created_at'] + ($ttlMinutes * 60))) {
-            unset(self::$activeSessions[$sessionKey][$sessionToken]);
+        if (!is_array($session)) {
             return null;
         }
 
@@ -75,13 +67,12 @@ class SessionStrategy implements AuthStrategyInterface
         $sessionToken = Str::random(64);
         $cookieName = $config['cookie_name'] ?? 'mock_session';
         $ttlMinutes = $config['session_ttl_minutes'] ?? 120;
-        $sessionKey = $this->getSessionKey($config);
 
-        self::$activeSessions[$sessionKey][$sessionToken] = [
+        Cache::put($this->getCacheKey($config, $sessionToken), [
             'username' => $username,
             'credential_id' => $matchedCredential->id,
             'created_at' => time(),
-        ];
+        ], now()->addMinutes($ttlMinutes));
 
         return [
             'status' => 200,
@@ -114,8 +105,8 @@ class SessionStrategy implements AuthStrategyInterface
         ];
     }
 
-    private function getSessionKey(array $config): string
+    private function getCacheKey(array $config, string $sessionToken): string
     {
-        return md5(json_encode($config));
+        return 'mock_session:' . md5(json_encode($config)) . ':' . $sessionToken;
     }
 }
